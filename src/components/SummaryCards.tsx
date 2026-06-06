@@ -59,7 +59,7 @@ function StatCard({ label, value, className }: { label: string; value: number; c
         <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className={cn("text-2xl font-bold tabular-nums", className)}>{formatVNDSymbol(value)}</p>
+        <p className={cn("text-2xl font-bold tabular-nums break-all leading-tight", className)}>{formatVNDSymbol(value)}</p>
       </CardContent>
     </Card>
   );
