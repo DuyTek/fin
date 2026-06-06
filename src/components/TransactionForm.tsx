@@ -1,16 +1,10 @@
 /** Form to record a new income/expense transaction. */
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useState } from "react";
 import { AmountInput } from "@/components/AmountInput";
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -20,15 +14,14 @@ import type { Category, TxType } from "@/types";
 interface Props {
   categories: Category[];
   onCreated: () => void;
+  onCategoryCreated: () => void;
 }
 
-export function TransactionForm({ categories, onCreated }: Props) {
+export function TransactionForm({ categories, onCreated, onCategoryCreated }: Props) {
   // UI state that drives rendering (formatting, category filter, button styles).
   const [type, setType] = useState<TxType>("expense");
   const [amount, setAmount] = useState(0);
   const [categoryId, setCategoryId] = useState<string>("");
-
-  const options = useMemo(() => categories.filter((c) => c.type === type), [categories, type]);
 
   // Submission lifecycle (pending + error) is owned by the form action.
   const [error, submit, pending] = useActionState<string | null, FormData>(
@@ -88,19 +81,14 @@ export function TransactionForm({ categories, onCreated }: Props) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="category">Category</Label>
-        <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger id="category" className="w-full">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {options.map((c) => (
-              <SelectItem key={c.id} value={String(c.id)}>
-                {c.name}
-                {c.is_custom === 1 ? " ·" : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CategoryCombobox
+          id="category"
+          categories={categories}
+          type={type}
+          value={categoryId}
+          onChange={setCategoryId}
+          onCategoryCreated={onCategoryCreated}
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">

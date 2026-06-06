@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CategoryManager } from "@/components/CategoryManager";
 import { MonthPicker } from "@/components/MonthPicker";
 import { SummaryCards } from "@/components/SummaryCards";
 import { TransactionForm } from "@/components/TransactionForm";
@@ -74,16 +73,11 @@ export function App() {
               <CardTitle className="text-base">Add transaction</CardTitle>
             </CardHeader>
             <CardContent>
-              <TransactionForm categories={categories.data} onCreated={refreshAll} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Categories</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CategoryManager categories={categories.data} onChanged={refreshAll} />
+              <TransactionForm
+                categories={categories.data}
+                onCreated={refreshAll}
+                onCategoryCreated={categories.reload}
+              />
             </CardContent>
           </Card>
         </div>

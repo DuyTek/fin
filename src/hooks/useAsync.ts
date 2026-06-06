@@ -5,7 +5,7 @@
  *
  * Not finance-specific — reuse it for any read-from-API view.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 
 export interface AsyncState<T> {
   data: T;
@@ -14,28 +14,47 @@ export interface AsyncState<T> {
   reload: () => void;
 }
 
+type State<T> = Omit<AsyncState<T>, "reload">;
+type Action<T> =
+  | { type: "fetch" }
+  | { type: "success"; data: T }
+  | { type: "error"; message: string };
+
+function reducer<T>(state: State<T>, action: Action<T>): State<T> {
+  switch (action.type) {
+    case "fetch":
+      return { ...state, loading: true, error: null };
+    case "success":
+      return { data: action.data, loading: false, error: null };
+    case "error":
+      return { ...state, loading: false, error: action.message };
+  }
+}
+
 export function useAsync<T>(
   initial: T,
   fetcher: () => Promise<T>,
   deps: unknown[],
 ): AsyncState<T> {
-  const [data, setData] = useState<T>(initial);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  const reload = useCallback(() => setTick((t) => t + 1), []);
+  const [state, dispatch] = useReducer(reducer<T>, {
+    data: initial,
+    loading: true,
+    error: null,
+  });
+  const [tick, reload] = useReducer((t: number) => t + 1, 0);
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+    dispatch({ type: "fetch" });
     fetcher()
       .then((d) => {
         if (!alive) return;
-        setData(d);
-        setError(null);
+        dispatch({ type: "success", data: d });
       })
-      .catch((e) => alive && setError(String(e?.message ?? e)))
-      .finally(() => alive && setLoading(false));
+      .catch((e) => {
+        if (!alive) return;
+        dispatch({ type: "error", message: String(e?.message ?? e) });
+      });
     return () => {
       alive = false;
     };
@@ -43,5 +62,5 @@ export function useAsync<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
 
-  return { data, loading, error, reload };
+  return { ...state, reload };
 }
