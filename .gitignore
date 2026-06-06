@@ -6,6 +6,12 @@ out
 dist
 *.tgz
 
+# local SQLite database (bun:sqlite)
+finance.db
+finance.db-*
+*.sqlite
+*.sqlite-*
+
 # code coverage
 coverage
 *.lcov
