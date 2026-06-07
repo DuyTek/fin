@@ -1,5 +1,5 @@
-import { test, expect, describe, afterEach } from "bun:test";
-import { act, createElement, useRef } from "react";
+import { test, expect, describe } from "bun:test";
+import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { useAsync } from "@/hooks/useAsync";
 
