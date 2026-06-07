@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { formatVND, formatVNDSymbol, parseVND } from "./money";
+import { formatVND, formatVNDSymbol, parseVND } from "@/lib/money";
 
 describe("formatVND", () => {
   test("adds thousand separators", () => {
