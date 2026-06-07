@@ -7,16 +7,22 @@
  */
 import { Database } from "bun:sqlite";
 import type {
+  Budget,
+  BudgetWithMetrics,
   Category,
   CategoryBreakdown,
+  CreateBudgetInput,
   CreateCategoryInput,
   CreateTransactionInput,
   Summary,
   Transaction,
   TransactionWithCategory,
   TxType,
+  UpdateBudgetInput,
   UpdateTransactionInput,
 } from "@/types";
+import { calcForecast, calcStatus, calcPercentUsed } from "@/lib/budget";
+import { monthRange, shiftMonth, todayISO } from "@/lib/dates";
 
 const DB_PATH = process.env.DATABASE_PATH ?? "./finance.db";
 
@@ -47,6 +53,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_tx_occurred_on ON transactions(occurred_on);
   CREATE INDEX IF NOT EXISTS idx_tx_category    ON transactions(category_id);
   CREATE INDEX IF NOT EXISTS idx_tx_type        ON transactions(type);
+
+  CREATE TABLE IF NOT EXISTS budgets (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_id INTEGER NOT NULL REFERENCES categories(id),
+    month       TEXT NOT NULL,
+    amount      INTEGER NOT NULL CHECK (amount > 0),
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (category_id, month)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_budget_month    ON budgets(month);
+  CREATE INDEX IF NOT EXISTS idx_budget_category ON budgets(category_id);
 `);
 
 // ---- Seed builtin categories (once) ----
@@ -250,4 +268,95 @@ export function getSummary(from?: string, to?: string): Summary {
     balance: totals.income - totals.expense,
     expense_by_category,
   };
+}
+
+// ---- Budgets ----
+
+export function listBudgets({
+  month,
+  category_id,
+}: {
+  month?: string;
+  category_id?: number;
+}): BudgetWithMetrics[] {
+  // Carry-over: when a specific month is requested, copy previous month's caps.
+  // INSERT OR IGNORE is idempotent — the UNIQUE constraint prevents duplicates.
+  if (month) {
+    db.query(
+      `INSERT OR IGNORE INTO budgets (category_id, month, amount)
+       SELECT category_id, ?, amount FROM budgets WHERE month = ?`,
+    ).run(month, shiftMonth(month, -1));
+  }
+
+  const where: string[] = [];
+  const params: (string | number)[] = [];
+  if (month) {
+    where.push("b.month = ?");
+    params.push(month);
+  }
+  if (category_id !== undefined) {
+    where.push("b.category_id = ?");
+    params.push(category_id);
+  }
+  const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  // spent is derived from transactions scoped to each budget's own month,
+  // using SQLite date arithmetic so the join works for multi-month history queries.
+  const rows = db
+    .query(
+      `SELECT b.*, c.name AS category_name,
+              COALESCE(SUM(t.amount), 0) AS spent
+       FROM budgets b
+       JOIN categories c ON c.id = b.category_id
+       LEFT JOIN transactions t
+         ON  t.category_id = b.category_id
+         AND t.type = 'expense'
+         AND t.occurred_on >= (b.month || '-01')
+         AND t.occurred_on <  date(b.month || '-01', '+1 month')
+       ${clause}
+       GROUP BY b.id
+       ORDER BY b.month DESC, c.name ASC`,
+    )
+    .all(...params) as (Budget & { category_name: string; spent: number })[];
+
+  const today = todayISO();
+
+  return rows.map((row) => {
+    const { from, to } = monthRange(row.month);
+    const dTotal = Number(to.split("-")[2]);
+    const dElapsed =
+      today >= to ? dTotal : today < from ? 0 : Number(today.split("-")[2]);
+
+    return {
+      ...row,
+      forecast: calcForecast(row.spent, dElapsed, dTotal),
+      status: calcStatus(row.spent, row.amount),
+      percent_used: calcPercentUsed(row.spent, row.amount),
+    };
+  });
+}
+
+export function createBudget(input: CreateBudgetInput): Budget {
+  return db
+    .query(
+      `INSERT INTO budgets (category_id, month, amount) VALUES (?, ?, ?) RETURNING *`,
+    )
+    .get(input.category_id, input.month, input.amount) as Budget;
+}
+
+export function getBudget(id: number): Budget | null {
+  return (db.query("SELECT * FROM budgets WHERE id = ?").get(id) as Budget) ?? null;
+}
+
+export function updateBudget(id: number, input: UpdateBudgetInput): Budget | null {
+  return (
+    (db
+      .query(`UPDATE budgets SET amount = ? WHERE id = ? RETURNING *`)
+      .get(input.amount, id) as Budget) ?? null
+  );
+}
+
+export function deleteBudget(id: number): boolean {
+  const res = db.query("DELETE FROM budgets WHERE id = ?").run(id);
+  return res.changes > 0;
 }

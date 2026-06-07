@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { json, error, isTxType, parseAmount, parseDate, parseId, ValidationError } from "@/server/http";
+import { json, error, isTxType, parseAmount, parseDate, parseId, parseMonth, ValidationError } from "@/server/http";
 
 describe("isTxType", () => {
   test("returns true for valid types", () => {
@@ -90,6 +90,28 @@ describe("parseId", () => {
 
   test("returns null for undefined", () => {
     expect(parseId(undefined)).toBeNull();
+  });
+});
+
+describe("parseMonth", () => {
+  test("accepts valid YYYY-MM string", () => {
+    expect(parseMonth("2026-06")).toBe("2026-06");
+    expect(parseMonth("2026-01")).toBe("2026-01");
+    expect(parseMonth("2026-12")).toBe("2026-12");
+  });
+
+  test("throws for non-string types", () => {
+    expect(() => parseMonth(202606)).toThrow(ValidationError);
+    expect(() => parseMonth(null)).toThrow(ValidationError);
+    expect(() => parseMonth(undefined)).toThrow(ValidationError);
+  });
+
+  test("throws for wrong format", () => {
+    expect(() => parseMonth("2026-6")).toThrow(ValidationError);
+    expect(() => parseMonth("2026/06")).toThrow(ValidationError);
+    expect(() => parseMonth("06-2026")).toThrow(ValidationError);
+    expect(() => parseMonth("2026-06-07")).toThrow(ValidationError);
+    expect(() => parseMonth("")).toThrow(ValidationError);
   });
 });
 
