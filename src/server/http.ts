@@ -40,3 +40,11 @@ export function parseId(v: string | undefined): number | null {
   const n = Number(v);
   return Number.isInteger(n) && n > 0 ? n : null;
 }
+
+/** A YYYY-MM month string. */
+export function parseMonth(v: unknown): string {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}$/.test(v)) {
+    throw new ValidationError("month must be in YYYY-MM format");
+  }
+  return v;
+}

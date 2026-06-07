@@ -8,6 +8,7 @@ import {
   parseAmount,
   parseDate,
   parseId,
+  parseMonth,
   ValidationError,
 } from "./server/http";
 import type { TxType } from "./types";
@@ -145,6 +146,68 @@ const server = serve({
       GET(req) {
         const p = new URL(req.url).searchParams;
         return json(store.getSummary(p.get("from") ?? undefined, p.get("to") ?? undefined));
+      },
+    },
+
+    // ---- Budgets ----
+    "/api/budgets": {
+      GET(req) {
+        const p = new URL(req.url).searchParams;
+        const rawMonth = p.get("month");
+        const rawCategoryId = p.get("category_id");
+        try {
+          return json(
+            store.listBudgets({
+              month: rawMonth ? parseMonth(rawMonth) : undefined,
+              category_id: rawCategoryId ? Number(rawCategoryId) : undefined,
+            }),
+          );
+        } catch (e) {
+          if (e instanceof ValidationError) return error(e.message);
+          throw e;
+        }
+      },
+      async POST(req) {
+        try {
+          const body = (await req.json()) as Record<string, unknown>;
+          const month = parseMonth(body.month);
+          const amount = parseAmount(body.amount);
+          const categoryId = Number(body.category_id);
+          const category = store.getCategory(categoryId);
+          if (!category) throw new ValidationError("category not found");
+          if (category.type !== "expense") {
+            throw new ValidationError("budgets can only be set for expense categories");
+          }
+          return json(store.createBudget({ category_id: categoryId, month, amount }), 201);
+        } catch (e) {
+          if (e instanceof ValidationError) return error(e.message);
+          // UNIQUE(category_id, month) violation
+          return error("a budget for that category and month already exists", 409);
+        }
+      },
+    },
+
+    "/api/budgets/:id": {
+      async PATCH(req) {
+        const id = parseId(req.params.id);
+        if (id === null) return error("invalid id", 400);
+        try {
+          const body = (await req.json()) as Record<string, unknown>;
+          const amount = parseAmount(body.amount);
+          const updated = store.updateBudget(id, { amount });
+          if (!updated) return error("budget not found", 404);
+          return json(updated);
+        } catch (e) {
+          if (e instanceof ValidationError) return error(e.message);
+          throw e;
+        }
+      },
+      DELETE(req) {
+        const id = parseId(req.params.id);
+        if (id === null) return error("invalid id", 400);
+        return store.deleteBudget(id)
+          ? json({ ok: true })
+          : error("budget not found", 404);
       },
     },
 

@@ -62,3 +62,38 @@ export interface CreateTransactionInput {
 }
 
 export type UpdateTransactionInput = Partial<CreateTransactionInput>;
+
+// ---- Budgets ----
+
+export type BudgetStatus = "on_track" | "warning" | "exceeded";
+
+export interface Budget {
+  id: number;
+  category_id: number;
+  /** YYYY-MM */
+  month: string;
+  /** whole VND cap */
+  amount: number;
+  created_at: string;
+}
+
+export interface BudgetWithMetrics extends Budget {
+  category_name: string;
+  /** total expense transactions for this category within the month */
+  spent: number;
+  /** projected end-of-month spend; 0 if no days have elapsed yet */
+  forecast: number;
+  status: BudgetStatus;
+  /** spent / amount × 100, rounded */
+  percent_used: number;
+}
+
+export interface CreateBudgetInput {
+  category_id: number;
+  /** YYYY-MM */
+  month: string;
+  /** whole VND */
+  amount: number;
+}
+
+export type UpdateBudgetInput = Pick<CreateBudgetInput, "amount">;
