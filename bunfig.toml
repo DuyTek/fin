@@ -4,3 +4,5 @@ env = "BUN_PUBLIC_*"
 
 [test]
 preload = ["./src/tests/setup.ts"]
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"
