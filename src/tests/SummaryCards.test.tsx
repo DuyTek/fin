@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { act, createElement } from "react";
+import { createElement } from "react";
 import { SummaryCards } from "@/components/SummaryCards";
 import type { Summary } from "@/types";
 import { renderComponent } from "./utils/render";
