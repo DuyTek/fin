@@ -1,12 +1,16 @@
 /** Typed fetch wrappers for the finance REST API. */
 import type {
+  Budget,
+  BudgetWithMetrics,
   Category,
+  CreateBudgetInput,
   CreateCategoryInput,
   CreateTransactionInput,
   Summary,
   Transaction,
   TransactionWithCategory,
   TxType,
+  UpdateBudgetInput,
   UpdateTransactionInput,
 } from "@/types";
 
@@ -63,4 +67,14 @@ export const api = {
   // Summary
   getSummary: (from?: string, to?: string) =>
     req<Summary>(`/api/summary${qs({ from, to })}`),
+
+  // Budgets
+  listBudgets: (filters: { month?: string; category_id?: number }) =>
+    req<BudgetWithMetrics[]>(`/api/budgets${qs({ ...filters })}`),
+  createBudget: (input: CreateBudgetInput) =>
+    req<Budget>("/api/budgets", { method: "POST", body: JSON.stringify(input) }),
+  updateBudget: (id: number, input: UpdateBudgetInput) =>
+    req<Budget>(`/api/budgets/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+  deleteBudget: (id: number) =>
+    req<{ ok: true }>(`/api/budgets/${id}`, { method: "DELETE" }),
 };

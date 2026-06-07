@@ -5,7 +5,7 @@
  */
 import { api } from "@/lib/api";
 import { useAsync, type AsyncState } from "@/hooks/useAsync";
-import type { Category, Summary, TransactionWithCategory } from "@/types";
+import type { BudgetWithMetrics, Category, Summary, TransactionWithCategory } from "@/types";
 
 export type { AsyncState } from "@/hooks/useAsync";
 
@@ -26,5 +26,16 @@ export function useSummary(from: string, to: string): AsyncState<Summary> {
     { income: 0, expense: 0, balance: 0, expense_by_category: [] },
     () => api.getSummary(from, to),
     [from, to],
+  );
+}
+
+export function useBudgets(filters: {
+  month?: string;
+  category_id?: number;
+}): AsyncState<BudgetWithMetrics[]> {
+  return useAsync<BudgetWithMetrics[]>(
+    [],
+    () => api.listBudgets(filters),
+    [filters.month, filters.category_id],
   );
 }
