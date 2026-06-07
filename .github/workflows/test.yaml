@@ -21,7 +21,7 @@ jobs:
         run: bun lint
 
       - name: Build production
-        run: bun build
+        run: bun run build
 
       - name: Run tests
         run: bun test --coverage
