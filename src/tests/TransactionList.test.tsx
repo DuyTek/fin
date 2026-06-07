@@ -1,8 +1,8 @@
 import { test, expect, describe } from "bun:test";
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
 import { TransactionList } from "@/components/TransactionList";
 import type { TransactionWithCategory } from "@/types";
+import { renderComponent } from "./utils/render";
 
 mock.module("@/lib/api", () => ({
   api: {
@@ -12,23 +12,6 @@ mock.module("@/lib/api", () => ({
 }));
 
 import { mock } from "bun:test";
-
-function renderComponent(element: ReturnType<typeof createElement>): {
-  container: HTMLElement;
-  unmount: () => void;
-} {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  act(() => { root.render(element); });
-  return {
-    container,
-    unmount: () => {
-      act(() => { root.unmount(); });
-      container.remove();
-    },
-  };
-}
 
 const sampleTx: TransactionWithCategory = {
   id: 1,

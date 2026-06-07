@@ -1,24 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
 import { MonthPicker } from "@/components/MonthPicker";
-
-function renderComponent(element: ReturnType<typeof createElement>): {
-  container: HTMLElement;
-  unmount: () => void;
-} {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  act(() => { root.render(element); });
-  return {
-    container,
-    unmount: () => {
-      act(() => { root.unmount(); });
-      container.remove();
-    },
-  };
-}
+import { renderComponent } from "./utils/render";
 
 describe("MonthPicker", () => {
   test("displays the formatted month label", () => {

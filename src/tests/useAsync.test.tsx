@@ -1,29 +1,7 @@
 import { test, expect, describe } from "bun:test";
-import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
+import { act } from "react";
 import { useAsync } from "@/hooks/useAsync";
-
-function renderHook<T>(render: () => T): { result: { current: T }; unmount: () => void } {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const result = { current: undefined as T };
-
-  function Capture() {
-    result.current = render();
-    return null;
-  }
-
-  const root = createRoot(container);
-  act(() => { root.render(createElement(Capture)); });
-
-  return {
-    result: result as { current: T },
-    unmount: () => {
-      act(() => { root.unmount(); });
-      container.remove();
-    },
-  };
-}
+import { renderHook } from "./utils/render";
 
 describe("useAsync", () => {
   test("starts in loading state", () => {

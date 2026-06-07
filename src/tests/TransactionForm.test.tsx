@@ -1,8 +1,8 @@
 import { test, expect, describe, mock } from "bun:test";
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
 import { TransactionForm } from "@/components/TransactionForm";
 import type { Category } from "@/types";
+import { renderComponent } from "./utils/render";
 
 mock.module("@/lib/api", () => ({
   api: {
@@ -24,23 +24,6 @@ mock.module("@/lib/api", () => ({
     }),
   },
 }));
-
-function renderComponent(element: ReturnType<typeof createElement>): {
-  container: HTMLElement;
-  unmount: () => void;
-} {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  act(() => { root.render(element); });
-  return {
-    container,
-    unmount: () => {
-      act(() => { root.unmount(); });
-      container.remove();
-    },
-  };
-}
 
 const categories: Category[] = [
   { id: 1, name: "Food", type: "expense", is_custom: 0, created_at: "2026-01-01" },

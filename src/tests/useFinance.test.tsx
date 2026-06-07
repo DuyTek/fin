@@ -1,7 +1,7 @@
 import { test, expect, describe, mock } from "bun:test";
-import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
+import { act } from "react";
 import type { AsyncState } from "@/hooks/useAsync";
+import { renderHook } from "./utils/render";
 
 mock.module("@/lib/api", () => ({
   api: {
@@ -19,28 +19,6 @@ mock.module("@/lib/api", () => ({
     }),
   },
 }));
-
-function renderHook<T>(render: () => T): { result: { current: T }; unmount: () => void } {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const result = { current: undefined as T };
-
-  function Capture() {
-    result.current = render();
-    return null;
-  }
-
-  const root = createRoot(container);
-  act(() => { root.render(createElement(Capture)); });
-
-  return {
-    result: result as { current: T },
-    unmount: () => {
-      act(() => { root.unmount(); });
-      container.remove();
-    },
-  };
-}
 
 describe("useCategories", () => {
   test("starts loading then resolves category list", async () => {

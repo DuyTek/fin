@@ -1,25 +1,8 @@
 import { test, expect, describe } from "bun:test";
 import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
 import { SummaryCards } from "@/components/SummaryCards";
 import type { Summary } from "@/types";
-
-function renderComponent(element: ReturnType<typeof createElement>): {
-  container: HTMLElement;
-  unmount: () => void;
-} {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  act(() => { root.render(element); });
-  return {
-    container,
-    unmount: () => {
-      act(() => { root.unmount(); });
-      container.remove();
-    },
-  };
-}
+import { renderComponent } from "./utils/render";
 
 const emptySummary: Summary = {
   income: 0,
