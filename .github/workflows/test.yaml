@@ -26,9 +26,8 @@ jobs:
       - name: Run tests
         run: bun test --coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - name: Post coverage comment
+        uses: romeovs/lcov-reporter-action@v0.4.0
         with:
-          files: coverage/lcov.info
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+          lcov-file: coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
